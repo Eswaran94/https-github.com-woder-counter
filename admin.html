@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - Wonder Traffic Tech</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f6f8fb;
+      color: #333;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 16px 32px;
+      border-bottom: 1px solid #eee;
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    header .logo {
+      font-weight: bold;
+      font-size: 22px;
+      color: #0078D7;
+    }
+    nav a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #555;
+      font-weight: 500;
+    }
+    nav .active {
+      color: #0078D7;
+      border-bottom: 2px solid #0078D7;
+    }
+    .container {
+      padding: 32px;
+    }
+    .form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 160px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005fb8;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f4f6fa;
+      font-weight: 600;
+    }
+    .status {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      color: white;
+    }
+    .status.active {
+      background-color: #2ecc71;
+    }
+    .status.inactive {
+      background-color: #7f8c8d;
+    }
+    .remove-btn {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Wonder Admin Panel</div>
+    <nav>
+      <a class="active">Employees</a>
+      <a>Reports</a>
+      <a>Settings</a>
+    </nav>
+    <img src="logo.png" class="logo-icon" alt="Logo" />
+  </header>
+
+  <div class="container">
+    <div class="form">
+      <input id="empName" placeholder="Employee Name">
+      <input id="empID" placeholder="Employee ID">
+      <select id="empRole">
+        <option>User</option>
+        <option>Admin</option>
+        <option>Manager</option>
+        <option>Team Leader</option>
+        <option>Video Analyst</option>
+        <option>Quality Controller</option>
+      </select>
+      <button onclick="addEmployee()">Add Employee</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Name</th><th>ID</th><th>Role</th><th>Status</th><th>Action</th></tr>
+      </thead>
+      <tbody id="empList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    function addEmployee() {
+      const name = document.getElementById('empName').value.trim();
+      const id = document.getElementById('empID').value.trim();
+      const role = document.getElementById('empRole').value;
+
+      if (!name || !id) return alert("Enter both name and ID");
+
+      try {
+        const employees = JSON.parse(localStorage.getItem('employeeRecords') || "[]");
+
+        if (employees.some(e => e.name === name || e.id === id)) {
+          alert("Employee with same name or ID already exists.");
+          return;
+        }
+
+        employees.push({ name, id, role, used: false });
+        localStorage.setItem('employeeRecords', JSON.stringify(employees));
+
+        renderList();
+
+        document.getElementById('empName').value = '';
+        document.getElementById('empID').value = '';
+        document.getElementById('empRole').selectedIndex = 0;
+      } catch (err) {
+        alert("Error saving to localStorage. Check your browser settings.");
+        console.error(err);
+      }
+    }
+
+    function deleteEmployee(index) {
+      const employees = JSON.parse(localStorage.getItem('employeeRecords') || "[]");
+      employees.splice(index, 1);
+      localStorage.setItem('employeeRecords', JSON.stringify(employees));
+      renderList();
+    }
+
+    function renderList() {
+      const employees = JSON.parse(localStorage.getItem('employeeRecords') || "[]");
+      const currentUser = localStorage.getItem("currentEmployee");
+      const list = document.getElementById('empList');
+      list.innerHTML = '';
+
+      employees.forEach((e, i) => {
+        const isLoggedIn = currentUser === e.name;
+        const statusClass = isLoggedIn ? 'active' : 'inactive';
+        const statusLabel = isLoggedIn ? '🟢 Active' : '⚫ Inactive';
+
+        list.innerHTML += `
+          <tr>
+            <td>${e.name}</td>
+            <td>${e.id}</td>
+            <td>${e.role || 'User'}</td>
+            <td><span class="status ${statusClass}">${statusLabel}</span></td>
+            <td><button class="remove-btn" onclick="deleteEmployee(${i})">Remove</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    window.onload = function () {
+      renderList();
+
+      // Allow Enter key to submit
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          addEmployee();
+        }
+      });
+    };
+    
+
+  </script>
+</body>
+</html>
